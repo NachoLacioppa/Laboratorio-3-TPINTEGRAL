@@ -3,9 +3,9 @@
 
 --ej 1 ok
 --ej 2 ok
---ej 3 ok
+--ej 3 OK
 --ej 4 ok
---ej 5 FALTA!!!
+--ej 5 VERIFICAR CONDICIONES (PASA EL ESTADO A 0)
 --EJ 6 FALTA!!!
 --EJ 7 FALTA!!!
 
@@ -40,6 +40,7 @@ select*from Vista_ej1
 --INSERT INTO Cuentas (IDCliente, Tipo, Limite, Saldo, Estado) VALUES (1, 'CA', 0, 0, 1)
 
 SELECT * FROM CUENTAS
+
 CREATE PROCEDURE PR_AGREGARCUENTA @IDCLIENTE BIGINT , @TIPO VARCHAR(2) , @LIMITE MONEY
 AS
 IF( @TIPO = 'cc' OR @TIPO = 'CC' )
@@ -71,6 +72,12 @@ select @idCuenta=IDCUENTA FROM inserted
 INSERT INTO TARJETAS VALUES ( @idCuenta,'D',1)
 
 
+INSERT INTO CUENTAS VALUES (4, 'CC',0 , 0 ,1) 
+
+SELECT * FROM CUENTAS
+SELECT * FROM TARJETAS
+
+
 --4 - Realizar un trigger que al registrar un nuevo usuario le sea otorgada una Caja de Ahorro nueva.
 create trigger TG_ASIGNARCUENTA on CLIENTES
 AFTER INSERT
@@ -80,23 +87,73 @@ select @idCliente = IDCLIENTE from inserted
 
 INSERT INTO CUENTAS VALUES (@idCliente,'CA',0,0,1)
 
+SELECT * FROM CLIENTES
+SELECT * FROM CUENTAS
+
+INSERT INTO CLIENTES VALUES (5,'LACIOPPA','NACHO',1)
+
 --5 - Realizar un trigger que al eliminar un usuario realice la baja lógica del mismo. Si se elimina un usuario
 --que ya se encuentra dado de baja lógica y dicho usuario no registra ni cuentas ni tarjetas, proceder a la
 --baja física del usuario.
-SELECT * FROM CLIENTES
 
-CREATE TRIGGER TR_BAJAUSUARIO ON CLIENTES
-INSTEAD OF UPDATE ,DELETE
+CREATE TRIGGER TR_ELIMINAR_CLIENTE ON CLIENTES
+INSTEAD OF DELETE
 AS
 BEGIN
 	DECLARE @IDCLIENTE BIGINT
 	DECLARE @ESTADO BIT
 
-	
+	SELECT @IDCLIENTE = IDCLIENTE FROM DELETED
 
-	
-	
-
+	UPDATE CLIENTES SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
 END
+	--IF(@ESTADO = 1)
+	--BEGIN
+	--	UPDATE CLIENTES SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
+	--END
+
+	--ELSE
+	--BEGIN
+	--	DELETE FROM CLIENTES WHERE IDCLIENTE = @IDCLIENTE
+	--	DELETE FROM CUENTAS WHERE IDCLIENTE = @IDCLIENTE
+	--END
+SELECT * FROM CLIENTES
+
+INSERT INTO CLIENTES VALUES (5,'LACIOPPA','NACHO',1)
+DELETE FROM CLIENTES WHERE IDCLIENTE = 5
+
+--6 - Realizar un trigger que al registrar un nuevo movimiento, actualice el saldo de la cuenta. Deberá
+--acreditar o debitar dinero en la cuenta dependiendo del tipo de movimiento ('D' - Débito y 'C' - Crédito). Se
+--deberá:
+--- Registrar el movimiento
+--- Actualizar el saldo de la cuenta
+ CREATE TRIGGER TG_ACTUALIZAR_SALDO on MOVIMIENTOS
+ AFTER INSERT
+ AS
+ BEGIN
+BEGIN TRY
+BEGIN TRANSACTION
+DECLARE @tipoMov varchar, @importe float, @idCuenta bigint
+select @tipoMov= tipo,@importe=importe,@idCuenta=IDCUENTA from inserted
+IF(@tipoMov='C')
+BEGIN
+     UPDATE CUENTAS set SALDO = SALDO+@importe where IDCUENTA=@idCuenta
+END
+IF(@tipoMov='D')
+BEGIN
+     UPDATE CUENTAS set SALDO = SALDO-@importe where IDCUENTA=@idCuenta
+END
+COMMIT TRANSACTION
+END TRY
+
+BEGIN CATCH
+ROLLBACK TRANSACTION
+END CATCH
+ END
+
+
+
+	
+	
 
 
