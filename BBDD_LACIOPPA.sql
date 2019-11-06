@@ -6,8 +6,10 @@
 --ej 3 OK
 --ej 4 ok
 --ej 5 VERIFICAR CONDICIONES (PASA EL ESTADO A 0)
---EJ 6 FALTA!!!
+--EJ 6 ok
 --EJ 7 FALTA!!!
+
+use banco
 
 --1 - Elaborar una vista que permita conocer para cada cliente: el apellido y nombres, los números de
 --cuenta, el saldo de la cuenta, la cantidad de movimientos realizados por cada cuenta y el saldo
@@ -127,29 +129,37 @@ DELETE FROM CLIENTES WHERE IDCLIENTE = 5
 --deberá:
 --- Registrar el movimiento
 --- Actualizar el saldo de la cuenta
- CREATE TRIGGER TG_ACTUALIZAR_SALDO on MOVIMIENTOS
- AFTER INSERT
- AS
- BEGIN
-BEGIN TRY
-BEGIN TRANSACTION
-DECLARE @tipoMov varchar, @importe float, @idCuenta bigint
-select @tipoMov= tipo,@importe=importe,@idCuenta=IDCUENTA from inserted
-IF(@tipoMov='C')
+CREATE TRIGGER TG_ACTUALIZAR_SALDO on MOVIMIENTOS
+AFTER INSERT
+AS
 BEGIN
-     UPDATE CUENTAS set SALDO = SALDO+@importe where IDCUENTA=@idCuenta
-END
-IF(@tipoMov='D')
-BEGIN
-     UPDATE CUENTAS set SALDO = SALDO-@importe where IDCUENTA=@idCuenta
-END
-COMMIT TRANSACTION
+	BEGIN TRY
+		BEGIN TRANSACTION
+			DECLARE @tipoMov varchar, @importe float, @idCuenta bigint
+			select @tipoMov= tipo,@importe=importe,@idCuenta=IDCUENTA from inserted
+			IF(@tipoMov='C')
+			BEGIN
+				UPDATE CUENTAS set SALDO = SALDO+@importe where IDCUENTA=@idCuenta
+			END
+			IF(@tipoMov='D')
+			BEGIN
+				UPDATE CUENTAS set SALDO = SALDO-@importe where IDCUENTA=@idCuenta
+			END
+		COMMIT TRANSACTION
 END TRY
 
 BEGIN CATCH
-ROLLBACK TRANSACTION
+	ROLLBACK TRANSACTION
 END CATCH
- END
+END
+
+--7 - Realizar un trigger que al registrar una nueva transferencia, registre los movimientos y actualice los
+--saldos de las cuenta. Deberá verificar que las cuentas de origen y destino sean distintas. Se deberá:
+--- Registrar la transferencia
+--- Registrar el movimiento de la cuenta de origen
+--- Registrar el movimiento de la cuenta de destino
+--NOTA: La acción debería generar una reacción en cadena si se realizó correctamente el Trigger de (6).
+
 
 
 
