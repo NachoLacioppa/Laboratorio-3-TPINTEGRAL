@@ -81,18 +81,16 @@ SELECT * FROM TARJETAS
 
 
 --4 - Realizar un trigger que al registrar un nuevo usuario le sea otorgada una Caja de Ahorro nueva.
-create trigger TG_ASIGNARCUENTA on CLIENTES
+create trigger TG_ASIGNAR_CUENTA on CLIENTES
 AFTER INSERT
 AS
 declare @idCliente bigint
-select @idCliente = IDCLIENTE from inserted
-
+select @idCliente= IDCLIENTE from inserted
 INSERT INTO CUENTAS VALUES (@idCliente,'CA',0,0,1)
 
-SELECT * FROM CLIENTES
-SELECT * FROM CUENTAS
-
-INSERT INTO CLIENTES VALUES (5,'LACIOPPA','NACHO',1)
+insert into CLIENTES values (5,'LACIOPPA','NACHO',1)
+select * from clientes
+select * from CUENTAS
 
 --5 - Realizar un trigger que al eliminar un usuario realice la baja lógica del mismo. Si se elimina un usuario
 --que ya se encuentra dado de baja lógica y dicho usuario no registra ni cuentas ni tarjetas, proceder a la
@@ -107,22 +105,23 @@ BEGIN
 
 	SELECT @IDCLIENTE = IDCLIENTE FROM DELETED
 
-	UPDATE CLIENTES SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
+	IF @ESTADO = 1
+	BEGIN
+		UPDATE CLIENTES SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
+		UPDATE CUENTAS SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
+	END
+	IF @ESTADO = 0
+	BEGIN
+		DELETE FROM CLIENTES WHERE IDCLIENTE = @IDCLIENTE
+		DELETE FROM CUENTAS WHERE IDCLIENTE = @IDCLIENTE
+	END
 END
-	--IF(@ESTADO = 1)
-	--BEGIN
-	--	UPDATE CLIENTES SET ESTADO = 0 WHERE IDCLIENTE = @IDCLIENTE
-	--END
 
-	--ELSE
-	--BEGIN
-	--	DELETE FROM CLIENTES WHERE IDCLIENTE = @IDCLIENTE
-	--	DELETE FROM CUENTAS WHERE IDCLIENTE = @IDCLIENTE
-	--END
-SELECT * FROM CLIENTES
-
-INSERT INTO CLIENTES VALUES (5,'LACIOPPA','NACHO',1)
 DELETE FROM CLIENTES WHERE IDCLIENTE = 5
+
+SELECT * FROM CLIENTES
+SELECT * FROM CUENTAS
+
 
 --6 - Realizar un trigger que al registrar un nuevo movimiento, actualice el saldo de la cuenta. Deberá
 --acreditar o debitar dinero en la cuenta dependiendo del tipo de movimiento ('D' - Débito y 'C' - Crédito). Se
@@ -147,7 +146,6 @@ BEGIN
 			END
 		COMMIT TRANSACTION
 END TRY
-
 BEGIN CATCH
 	ROLLBACK TRANSACTION
 END CATCH
